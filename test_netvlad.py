@@ -15,23 +15,21 @@ import cv2
 import numpy as np
 
 import sys
+from skimage.metrics import structural_similarity as ssim
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 src = './data/House_Room_Dataset/Bedroom'
 
 def load_model():
-
     # load pretrained model with netvlad
-    encoder = models.vgg16(pretrained=True).features[:-2]
+    encoder = models.vgg16().features[:-2]
     encoder.outchannels = 512
 
     net_vlad = NetVLAD(num_clusters=64, dim=512)
     model = torch.nn.Sequential(encoder, net_vlad).to(device)
-    model.load_state_dict(torch.load("netvlad_model.pth", map_location="cpu"))  # or "cuda"
+    model.load_state_dict(torch.load("netvlad_model.pth", map_location=device))
     model.eval()
     return model
-
-
 
 def extract_features(image_path, model):
     # preprocess the input image
@@ -83,7 +81,7 @@ def plot_images(input_image_path, result_image_paths, title):
     plt.suptitle(title)
     plt.show()
 
-def run_test_netvlad(query_img_path):
+def run_test_netvlad(query_img_path, data_path):
 
     model = load_model()
     # Code to load the saved descriptors
@@ -94,17 +92,26 @@ def run_test_netvlad(query_img_path):
     query_vec = extract_features(query_img_path, model).unsqueeze(0)
     # compute similarity with database
     similarities = cosine_similarity(query_vec, descriptors.numpy())
-    top_k_indices = similarities.argsort()[0][::-1][:5]  # top 5-k
+    top_k_indices = similarities.argsort()[0][::-1][:3]  # top 3-k
 
     result = [image_paths[i] for i in top_k_indices]
+    actual_result = []
+    query_im = cv2.imread(query_img_path, cv2.IMREAD_GRAYSCALE)
+    for image_path in result:
+        im = cv2.imread(os.path.join(data_path, image_path), cv2.IMREAD_GRAYSCALE)
+        if ssim(query_im, im) > 0.9:
+            actual_result.append(image_path)
     # plot_images(query_img_path, [os.path.join(src, image_paths[i]) for i in top_k_indices], "Top 5 Similar Images")
 
-    return result
+    return actual_result
 
 if __name__ == "__main__":
 
+    # Example usage: python test_netvlad.py <input_image_path> <data_path>
+    # python test_netvlad.py './data/House_Room_Dataset/Bedroom/bed_485.jpg' './data/House_Room_Dataset/Bedroom'
     input_image_path = sys.argv[1]
+    data_path = sys.argv[2]
     # Run the test with a query image
     # input_image_path = './data/House_Room_Dataset/Bedroom/bed_485.jpg'
-    result = run_test_netvlad(input_image_path)
+    result = run_test_netvlad(input_image_path, data_path)
     print(result)
