@@ -99,6 +99,8 @@ def run_test_netvlad(query_img_path, data_path):
     query_im = cv2.imread(query_img_path, cv2.IMREAD_GRAYSCALE)
     for image_path in result:
         im = cv2.imread(os.path.join(data_path, image_path), cv2.IMREAD_GRAYSCALE)
+        if im.shape != query_im.shape:
+            im = cv2.resize(im, (query_im.shape[1], query_im.shape[0]))
         if ssim(query_im, im) > 0.9:
             actual_result.append(image_path)
     # plot_images(query_img_path, [os.path.join(src, image_paths[i]) for i in top_k_indices], "Top 5 Similar Images")
