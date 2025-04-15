@@ -15,6 +15,7 @@ from sklearn.tree import DecisionTreeRegressor
 from sklearn.linear_model import LinearRegression
 import joblib
 import pandas as pd
+import sys
 
 class ColumnSelector(BaseEstimator, TransformerMixin):
     def __init__(self, feature_names):
@@ -32,7 +33,7 @@ def load_model(model_name):
 # regressor = load_model("DecisionTreeRegressor")
 
 
-def check_price_reasonability(image_path, area, rooms, toilets, asking_price):
+def check_price_reasonability(area, rooms, toilets, asking_price, district, legal_status):
     pipeline = load_model("full_pipeline")
     regressor = load_model("DecisionTreeRegressor")
 
@@ -41,8 +42,8 @@ def check_price_reasonability(image_path, area, rooms, toilets, asking_price):
         "Area - M2": area,
         "Rooms": rooms,
         "Toilets": toilets,
-        "District": "Quận 9",           # required by pipeline
-        "Legal status": "Đang chờ sổ"      # required by pipeline
+        "District": district,           # required by pipeline
+        "Legal status": legal_status      # required by pipeline
     }])
 
     # Preprocess
@@ -55,20 +56,31 @@ def check_price_reasonability(image_path, area, rooms, toilets, asking_price):
     lower = predicted_price * 0.8
     upper = predicted_price * 1.2
 
-    print(f"\n🏠 Asking price: {asking_price:.1f} million VND")
-    print(f"📈 Predicted price: {predicted_price:.1f} million VND (acceptable range: {lower:.1f} – {upper:.1f})")
+    # print(f"\n🏠 Asking price: {asking_price:.1f} million VND")
+    print(f"Predicted price: {predicted_price:.1f} million VND (acceptable range: {lower:.1f} - {upper:.1f})")
 
-    if asking_price < lower or asking_price > upper:
-        print("⚠️ Price is outside the reasonable range!")
-        return False
-    else:
-        print("✅ Price is within the expected range.")
-        return True
+    return asking_price >= lower and asking_price <= upper
+    #     print("⚠️ Price is outside the reasonable range!")
+    #     return False
+    # else:
+    #     print("✅ Price is within the expected range.")
+    #     return True
 
-check_price_reasonability(
-    image_path="./bed_485.jpg",
-    area=35,
-    rooms=1,
-    toilets=1,
-    asking_price=2000
-)
+# check_price_reasonability(
+#     image_path="./bed_485.jpg",
+#     area=35,
+#     rooms=1,
+#     toilets=1,
+#     asking_price=2000
+# )
+
+if __name__ == "__main__":
+
+    area = sys.argv[1]
+    rooms = sys.argv[2]
+    toilets = sys.argv[3]
+    asking_price = float(sys.argv[4])
+    district = sys.argv[5]
+    legal_status = sys.argv[6]
+    result = check_price_reasonability(area, rooms, toilets, asking_price, district, legal_status)
+    print(result)
