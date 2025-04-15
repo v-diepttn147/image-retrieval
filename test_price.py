@@ -76,6 +76,10 @@ def check_price_reasonability(area, rooms, toilets, asking_price, district, lega
 
 if __name__ == "__main__":
 
+    # Example usage: python test_price.py 35 1 1 2000 "Quận 9" "Đang chờ sổ"
+    # python test_price.py <area> <no_of_rooms> <no_of_toilets> <asking_price> <district> <legal_status>
+    # Output: True if the price is reasonable, False otherwise
+    # If true: proceed further, if false: alert the user
     area = sys.argv[1]
     rooms = sys.argv[2]
     toilets = sys.argv[3]
